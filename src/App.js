@@ -1,16 +1,14 @@
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import "./style.scss";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useContext } from "react";
-import { AuthContext } from "./context/AuthContext";
+
 
 function App() {
-  const { currentUser } = useContext(AuthContext);
 
   const ProtectedRoute = ({ children }) => {
-    if (!currentUser) {
+    let authorization=JSON.parse(localStorage.getItem('authorization'))
+    if (!authorization||!authorization.token) {
       return <Navigate to="/login" />;
     }
 
@@ -30,7 +28,6 @@ function App() {
             }
           />
           <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
         </Route>
       </Routes>
     </BrowserRouter>

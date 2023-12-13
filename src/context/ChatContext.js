@@ -3,12 +3,14 @@ import {
   useContext,
   useReducer,
 } from "react";
+import { useSelector } from "react-redux";
+
 import { AuthContext } from "./AuthContext";
 
 export const ChatContext = createContext();
 
 export const ChatContextProvider = ({ children }) => {
-  const { currentUser } = useContext(AuthContext);
+  const {authorization:currentUser} =useSelector(state=>state.authorization)
   const INITIAL_STATE = {
     chatId: "null",
     user: {},
@@ -19,10 +21,10 @@ export const ChatContextProvider = ({ children }) => {
       case "CHANGE_USER":
         return {
           user: action.payload,
-          chatId:
-            currentUser.uid > action.payload.uid
-              ? currentUser.uid + action.payload.uid
-              : action.payload.uid + currentUser.uid,
+          chatId:action.payload.documentId
+            // currentUser.uid > action.payload.uid
+            //   ? currentUser.uid + action.payload.uid
+            //   : action.payload.uid + currentUser.uid,
         };
 
       default:

@@ -1,4 +1,8 @@
 import React, { useContext, useState } from "react";
+import User from "../img/user.png";
+import { useSelector } from "react-redux";
+
+
 import {
   collection,
   query,
@@ -17,12 +21,13 @@ const Search = () => {
   const [user, setUser] = useState(null);
   const [err, setErr] = useState(false);
 
-  const { currentUser } = useContext(AuthContext);
+  const {authorization:currentUser} =useSelector(state=>state.authorization)
+  let admin=JSON.parse(localStorage.getItem('authorization'))
 
   const handleSearch = async () => {
     const q = query(
-      collection(db, "users"),
-      where("displayName", "==", username)
+      collection(db, `${admin.adminTypeName}`),
+      where("name", "==", username)
     );
 
     try {
@@ -90,7 +95,7 @@ const Search = () => {
       {err && <span>User not found!</span>}
       {user && (
         <div className="userChat" onClick={handleSelect}>
-          <img src={user.photoURL} alt="" />
+          <img src={User} alt="" />
           <div className="userChatInfo">
             <span>{user.displayName}</span>
           </div>
