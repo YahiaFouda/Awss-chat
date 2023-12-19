@@ -33,11 +33,7 @@ const Input = () => {
 
     const unsubscribe = listenToUserCount(data.chatId, (newCount) => {
       setCount(newCount);
-       updateDoc(doc(db, `${admin.adminTypeName}`, data.chatId), {
-       
-        unReadMessagesCountFromUser:0
-
-      });
+      
     });
 
     return () => {

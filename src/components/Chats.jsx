@@ -1,4 +1,4 @@
-import {collection, getDocs } from "firebase/firestore";
+import {collection, doc, getDocs, onSnapshot, updateDoc } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { ChatContext } from "../context/ChatContext";
@@ -15,26 +15,55 @@ const Chats = () => {
 
 
   const { dispatch } = useContext(ChatContext);
-  useEffect(() => {
-    const getChats = async() => {
-      let arr=[]
-      const querySnapshot = await getDocs(collection(db,`${admin.adminTypeName}` ));
-      querySnapshot.forEach((doc) => {
-       let obj=doc.data()
-       obj.documentId=doc.id
-        arr.push(obj)
-      });
-      setChats(arr);
-      handleSelect(Object.entries(arr)?.sort(sortByDateDesc)[0][1])
-    };
 
+  useEffect(() => {
+    const getChats = async () => {
+      const unsubscribe = onSnapshot(collection(db, admin.adminTypeName), (querySnapshot) => {
+        let arr = [];
+        querySnapshot.forEach((doc) => {
+          let obj = doc.data();
+          obj.documentId = doc.id;
+          arr.push(obj);
+        });
+        setChats(arr);
+        // handleSelect(Object.entries(arr)?.sort(sortByDateDesc)[0][1]);
+      });
+  
+      // Clean up the subscription when the component unmounts or when the user changes
+      return () => unsubscribe();
+    };
+  
     currentUser.id && getChats();
   }, [currentUser.id]);
 
+  // useEffect(() => {
+  //   // handleSelect(Object.entries(chats)?.sort(sortByDateDesc)[0][1]);
+
+  // //   const getChats = async() => {
+  // //     let arr=[]
+  // //     const querySnapshot = await getDocs(collection(db,`${admin.adminTypeName}` ));
+  // //     querySnapshot.forEach((doc) => {
+  // //      let obj=doc.data()
+  // //      obj.documentId=doc.id
+  // //       arr.push(obj)
+  // //     });
+  // //     setChats(arr);
+  // //     handleSelect(Object.entries(arr)?.sort(sortByDateDesc)[0][1])
+  // //   };
+
+  // //   currentUser.id && getChats();
+  // }, [currentUser.id]);
   const handleSelect = (u) => {
     dispatch({ type: "CHANGE_USER", payload: u });
     setIsSelected(u.documentId);
+    updateDoc(doc(db, `${admin.adminTypeName}`, u.documentId), {
+       
+      unReadMessagesCountFromAdmin:0
+
+    });
+    
   };
+ 
   function sortByDateDesc(a, b) {
    return new Date(b[1].lastMessageDate) - new Date(a[1].lastMessageDate);
   }
@@ -43,9 +72,10 @@ const Chats = () => {
       
       {Object.entries(chats)?.sort(sortByDateDesc).map((chat) => {
         
-        return (chat[1].documentId==isSelected? 
+        return (
+          //chat[1].documentId==isSelected? 
         <div
-        className="userChatSelected"
+        className={chat[1].documentId==isSelected?"userChatSelected":"userChat"}
         key={chat[0]}
         onClick={() =>{
           handleSelect(chat[1])
@@ -54,25 +84,26 @@ const Chats = () => {
       >
         <img src={User} alt="" />
         <div className="userChatInfo">
-          <span>{chat[1].name}{chat[1].unReadMessagesCountFromUser&&chat[1].unReadMessagesCountFromUser>0?<span style={{color:"red"}}> `({chat[1].unReadMessagesCountFromUser})`</span>:""}</span>
+          <span style={{marginInline:"10px"}}>{chat[1].name}{chat[1].unReadMessagesCountFromUser&&chat[1].unReadMessagesCountFromUser>0?<span className="" style={{color:"black" ,textAlign:"center",borderRadius:"50%",padding:"1px",backgroundColor:"red"}}> {chat[1].unReadMessagesCountFromUser}</span>:""}</span>
           <p>{chat[1]?chat[1].lastMessage?chat[1].lastMessage.length>20?`${chat[1].lastMessage.substring(1,20)} ....`:chat[1].lastMessage:"":""}</p>
         </div>
-      </div>:
+      </div>
+    //   :
       
-        <div
-          className="userChat"
-          key={chat[0]}
-          onClick={() =>{
-            handleSelect(chat[1])
-          }
-          }
-        >
-          <img src={User} alt="" />
-          <div className="userChatInfo">
-            <span>{chat[1].name}</span>
-            <p>{chat[1]?chat[1].lastMessage?chat[1].lastMessage.length>20?`${chat[1].lastMessage.substring(1,20)} ....`:chat[1].lastMessage:"":""}</p>
-          </div>
-        </div>
+    //     <div
+    //       className="userChat"
+    //       key={chat[0]}
+    //       onClick={() =>{
+    //         handleSelect(chat[1])
+    //       }
+    //       }
+    //     >
+    //       <img src={User} alt="" />
+    //       <div className="userChatInfo">
+    //       <span>{chat[1].name}{chat[1].unReadMessagesCountFromUser&&chat[1].unReadMessagesCountFromUser>0?<span style={{color:"red"}}> ({chat[1].unReadMessagesCountFromUser})</span>:""}</span>
+    //       <p>{chat[1]?chat[1].lastMessage?chat[1].lastMessage.length>20?`${chat[1].lastMessage.substring(1,20)} ....`:chat[1].lastMessage:"":""}</p>
+    // </div>
+    //     </div>
 )})}
     </div>
   );

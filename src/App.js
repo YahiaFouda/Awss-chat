@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 
 function App() {
-
+  
   const ProtectedRoute = ({ children }) => {
     let authorization=JSON.parse(localStorage.getItem('authorization'))
     if (!authorization||!authorization.token) {
@@ -17,18 +17,11 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/">
-          <Route
-            index
-            element={
-              <ProtectedRoute>
-                <Home />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="login" element={<Login />} />
-        </Route>
+    <Routes>
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/login" element={<Login />} />
+        {/* Add a default route in case none of the above match */}
+        <Route path="/*" element={<Navigate to="/login" />} />
       </Routes>
     </BrowserRouter>
   );

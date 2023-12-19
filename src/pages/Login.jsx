@@ -5,7 +5,7 @@ import { db } from "../firebase";
 import { Alert } from "react-bootstrap";
 
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate  } from "react-router-dom";
 import { doc, setDoc } from "firebase/firestore";
 import {loginApi} from '../network/network'
 import Loading from "../shared/loader/Loader";
@@ -46,7 +46,7 @@ const Login = () => {
 							setUserFBData(id, fullName);
 							updateErrorState(null);
 							setLoading(false);
-							navigate("/")
+							navigate("/home")
 							
 						} else {
 							updateErrorState(success.data.message);
