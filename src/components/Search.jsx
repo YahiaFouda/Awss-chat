@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import User from "../img/user.png";
+import User from "../assets/img/user.png";
 import { useSelector } from "react-redux";
 
 
