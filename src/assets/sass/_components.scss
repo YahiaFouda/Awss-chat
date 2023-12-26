@@ -1,0 +1,85 @@
+// @import "./base.scss";
+
+.formContainer {
+  background-color: #a7bcff;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .formWrapper {
+    background-color: white;
+    padding: 2rem 6rem;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+
+    .logo {
+      color: #5d5b8d;
+      font-weight: bold;
+      font-size: 2.4rem;
+    }
+
+    .title {
+      color: #5d5b8d;
+      font-size: 1.2rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+
+      input {
+        padding: 1.5rem;
+        border: none;
+        width: 25rem;
+        border-bottom: 1px solid #a7bcff;
+        &::placeholder {
+          color: rgb(175, 175, 175);
+        }
+      }
+
+      button {
+        background-color: #7b96ec;
+        color: #ddddf7;
+        padding: 1rem;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #8da4f1;
+        font-size: 1.2rem;
+        cursor: pointer;
+
+        img {
+          width: 32px;
+        }
+      }
+    }
+    p {
+      color: #5d5b8d;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+  }
+}
+
+.imgFile {
+  width: 5rem !important;
+  height: 5rem !important;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.anchor {
+  text-decoration: none;
+  color: inherit;
+}
