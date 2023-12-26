@@ -32,9 +32,52 @@ const Input = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [count, setCount] = useState(0);
-  const { data } = useContext(ChatContext);
-  const fileInputRef = useRef(null);
+  const { data, setData } = useContext(ChatContext); // Assuming you have a setData function in your context
 
+  const fileInputRef = useRef(null);
+  const handleKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault(); // Prevents the default behavior of the Enter key (e.g., line break in textarea)
+
+      await handleSendTextMessage();
+    }
+  };
+  const handleSendTextMessage = async () => {
+    if (text.trim() !== "") {
+      // Check if the text input is not empty
+      setCount((prev) => prev + 1);
+      let updatedCount = count + 1;
+
+      await updateDoc(doc(db, `${admin.adminTypeName}`, data.chatId), {
+        messages: arrayUnion({
+          adminId: currentUser.id,
+          message: text,
+          size: null,
+          documentName: null,
+          documentExtension: null,
+          date: moment(Timestamp.now().toDate()).format(),
+          type: type.message,
+        }),
+        lastMessage: text,
+        lastMessageDate: moment(Timestamp.now().toDate()).format(),
+        unReadMessagesCountFromAdmin: updatedCount,
+        unReadMessagesCountFromUser: 0,
+      });
+
+      setText(""); // Clear the text input after sending the message
+    }
+  };
+  const resetUnreadMessages = async () => {
+    if (data.chatId) {
+      await updateDoc(doc(db, `${admin.adminTypeName}`, data.chatId), {
+        unReadMessagesCountFromUser: 0,
+      });
+      setData((prevData) => ({ ...prevData, unReadMessagesCountFromUser: 0 }));
+    }
+  };
+  const handleInputFocus = () => {
+    resetUnreadMessages();
+  };
   // Function to clear the file input field
   const clearFileInput = () => {
     if (fileInputRef.current) {
@@ -57,7 +100,21 @@ const Input = () => {
   );
   let admin = JSON.parse(localStorage.getItem("authorization"));
 
+  const formatFileSize = (bytes) => {
+    console.log("🚀 ~ file: Input.jsx:73 ~ formatFileSize ~ bytes:", bytes);
+
+    if (!bytes) return null;
+    if (bytes >= 1073741824) {
+      return (bytes / 1073741824).toFixed(2) + " GB";
+    } else if (bytes >= 1048576) {
+      return (bytes / 1048576).toFixed(2) + " MB";
+    } else {
+      return (bytes / 1024).toFixed(2) + " KB";
+    }
+  };
   const handleSend = async (e) => {
+    const fileSize = formatFileSize(e?.size);
+    setCount((prev) => prev + 1);
     let updatedCount = count + 1;
     console.log("updatedCount", updatedCount);
     console.log("data.chatId", data.chatId);
@@ -68,13 +125,8 @@ const Input = () => {
       let etype = e.type.split("/")[0];
       if (etype == "image") {
         const storage = getStorage();
-        console.log("🚀 ~ file: Input.jsx:63 ~ handleSend ~ storage:", storage);
         const storageRef = ref(storage, `images/${uuid()}`);
         const uploadTask = uploadBytesResumable(storageRef, e);
-        console.log(
-          "🚀 ~ file: Input.jsx:66 ~ handleSend ~ storageRef:",
-          storageRef,
-        );
         uploadTask.on(
           "state_changed",
           (snapshot) => {
@@ -102,19 +154,22 @@ const Input = () => {
             // For instance, get the download URL: https://firebasestorage.googleapis.com/...
             getDownloadURL(uploadTask.snapshot.ref).then(
               async (downloadURL) => {
-                console.log("File available at", downloadURL);
                 await updateDoc(
                   doc(db, `${admin.adminTypeName}`, data.chatId),
                   {
                     messages: arrayUnion({
                       adminId: currentUser.id,
                       message: downloadURL,
+                      size: fileSize,
+                      documentName: e.name,
+                      documentExtension: e.name.split(".").pop(),
                       date: moment(Timestamp.now().toDate()).format(),
                       type: type.image,
                     }),
                     lastMessage: "Image",
                     lastMessageDate: moment(Timestamp.now().toDate()).format(),
                     unReadMessagesCountFromAdmin: updatedCount,
+                    unReadMessagesCountFromUser: 0,
                   },
                 );
               },
@@ -160,12 +215,16 @@ const Input = () => {
                     messages: arrayUnion({
                       adminId: currentUser.id,
                       message: downloadURL,
+                      size: fileSize,
+                      documentName: e.name,
+                      documentExtension: e.name.split(".").pop(),
                       date: moment(Timestamp.now().toDate()).format(),
                       type: type.video,
                     }),
                     lastMessage: "Video",
                     lastMessageDate: moment(Timestamp.now().toDate()).format(),
                     unReadMessagesCountFromAdmin: updatedCount,
+                    unReadMessagesCountFromUser: 0,
                   },
                 );
               },
@@ -181,12 +240,16 @@ const Input = () => {
           messages: arrayUnion({
             adminId: currentUser.id,
             message: text,
+            size: null,
+            documentName: null,
+            documentExtension: null,
             date: moment(Timestamp.now().toDate()).format(),
             type: type.message,
           }),
           lastMessage: text,
           lastMessageDate: moment(Timestamp.now().toDate()).format(),
           unReadMessagesCountFromAdmin: updatedCount,
+          unReadMessagesCountFromUser: 0,
         });
       } else {
         // var i = e.name.lastIndexOf('.');
@@ -220,30 +283,69 @@ const Input = () => {
             // Handle unsuccessful uploads
           },
           () => {
+            if (e?.name) {
+              const documentExtension = e.name.split(".").pop();
+              getDownloadURL(uploadTask.snapshot.ref).then(
+                async (downloadURL) => {
+                  console.log("e.type.split('/')", e.type.split("/"));
+                  console.log("test");
+
+                  console.log("File available at", downloadURL);
+                  await updateDoc(
+                    doc(db, `${admin.adminTypeName}`, data.chatId),
+                    {
+                      messages: arrayUnion({
+                        adminId: currentUser.id,
+                        message: downloadURL,
+                        size: fileSize || null,
+                        documentName: e?.name || null,
+                        documentExtension: documentExtension,
+                        date: moment(Timestamp.now().toDate()).format(),
+                        type: type.file,
+                      }),
+                      lastMessage: "File",
+                      lastMessageDate: moment(
+                        Timestamp.now().toDate(),
+                      ).format(),
+                      unReadMessagesCountFromAdmin: updatedCount,
+                      unReadMessagesCountFromUser: 0,
+                    },
+                  );
+                },
+              );
+            } else {
+              getDownloadURL(uploadTask.snapshot.ref).then(
+                async (downloadURL) => {
+                  console.log("e.type.split('/')", e.type.split("/"));
+                  console.log("test");
+
+                  console.log("File available at", downloadURL);
+                  await updateDoc(
+                    doc(db, `${admin.adminTypeName}`, data.chatId),
+                    {
+                      messages: arrayUnion({
+                        adminId: currentUser.id,
+                        message: downloadURL,
+                        size: null,
+                        documentName: null,
+                        documentExtension: null,
+                        date: moment(Timestamp.now().toDate()).format(),
+                        type: type.file,
+                      }),
+                      lastMessage: "File",
+                      lastMessageDate: moment(
+                        Timestamp.now().toDate(),
+                      ).format(),
+                      unReadMessagesCountFromAdmin: updatedCount,
+                      unReadMessagesCountFromUser: 0,
+                    },
+                  );
+                },
+              );
+            }
             // Handle successful uploads on complete
             // For instance, get the download URL: https://firebasestorage.googleapis.com/...
-            getDownloadURL(uploadTask.snapshot.ref).then(
-              async (downloadURL) => {
-                console.log("e.type.split('/')", e.type.split("/"));
-                console.log("test");
 
-                console.log("File available at", downloadURL);
-                await updateDoc(
-                  doc(db, `${admin.adminTypeName}`, data.chatId),
-                  {
-                    messages: arrayUnion({
-                      adminId: currentUser.id,
-                      message: downloadURL,
-                      date: moment(Timestamp.now().toDate()).format(),
-                      type: type.file,
-                    }),
-                    lastMessage: "File",
-                    lastMessageDate: moment(Timestamp.now().toDate()).format(),
-                    unReadMessagesCountFromAdmin: updatedCount,
-                  },
-                );
-              },
-            );
             setLoading(false);
           },
         );
@@ -275,6 +377,8 @@ const Input = () => {
           placeholder='Type something...'
           onChange={(e) => setText(e.target.value)}
           value={text}
+          onFocus={handleInputFocus}
+          onKeyDown={handleKeyDown}
         />
         <div className='send'>
           <input
